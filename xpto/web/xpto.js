@@ -744,24 +744,30 @@ const startupMessage = () => {
 
 const startTerminal = () => {
     drawPs1()
-    setTimeout(() => {
-        drawCursor()
-    }, 200)
-    document.onkeydown = (evt) => {
-        evt = evt || window.event
-        var charCode = evt.keyCode || evt.which
-        inputTerminal(charCode)
-    }
+
 }
 
-const bootXpto = () => {
+const bootXptoOS = () => {
     clearScreen()
     startupMessage()
     startTerminal()
 }
 
-document.querySelector('button#reboot').addEventListener('click', bootXpto)
+const bootXptoMachine = () => {
+    document.onkeydown = (evt) => {
+        evt = evt || window.event
+        var charCode = evt.keyCode || evt.which
+        inputTerminal(charCode)
+    }
+    bootXptoOS()
+    setTimeout(() => {
+        drawCursor()
+    }, 200)
 
-bootXpto()
+}
+
+document.querySelector('button#reboot').addEventListener('click', bootXptoOS)
+
+bootXptoMachine()
 
 // Next Step: https://www.hellorust.com/talks/
