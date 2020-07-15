@@ -654,30 +654,17 @@ const drawString = (x, y, str) => {
     TERMINAL["CURSOR_BLINK"] = true
 }
 
-const print = (x, y, str) => {
-    TERMINAL["CURSOR_BLINK"] = false
-    // console.info(x, y, str)
-    for (let i = 0; i < str.length; i++) {
-        // console.info(str.length)
-        // console.info((x + i), y, str)
-        drawChar((x + (i * XPTO_CHAR_PADDING_X)), y, str.charAt(i))
-    }
-    TERMINAL["CURSOR_X"] = x + (str.length * XPTO_CHAR_PADDING_X)
-    TERMINAL["CURSOR_BLINK"] = true
-}
-
-const printLine = (x, y, str) => {
-    TERMINAL["CURSOR_BLINK"] = false
-    // console.info(x, y, str)
-    for (let i = 0; i < str.length; i++) {
-        // console.info(str.length)
-        // console.info((x + i), y, str)
-        drawChar((x + (i * XPTO_CHAR_PADDING_X)), y, str.charAt(i))
-    }
-    TERMINAL["CURSOR_X"] = x + (str.length * XPTO_CHAR_PADDING_X)
-    TERMINAL["CURSOR_Y"] = XPTO_CHAR_PADDING_Y
-    TERMINAL["CURSOR_BLINK"] = true
-}
+// const print = (x, y, str) => {
+//     TERMINAL["CURSOR_BLINK"] = false
+//     // console.info(x, y, str)
+//     for (let i = 0; i < str.length; i++) {
+//         // console.info(str.length)
+//         // console.info((x + i), y, str)
+//         drawChar((x + (i * XPTO_CHAR_PADDING_X)), y, str.charAt(i))
+//     }
+//     TERMINAL["CURSOR_X"] = x + (str.length * XPTO_CHAR_PADDING_X)
+//     TERMINAL["CURSOR_BLINK"] = true
+// }
 
 const isValidChar = (chr) => (JSON.stringify(charMap).indexOf(chr) > -1 ? true : false)
 
@@ -695,7 +682,39 @@ const clearScreen = () => {
     TERMINAL["CURSOR_Y"] = XPTO_CURSOR_INITIAL_Y
 }
 const executeStdinBuffer = () => {
-    console.log(`Execute(${TERMINAL["STDIN_BUFFER"]})`)
+    const print = (x, y, str) => {
+        TERMINAL["CURSOR_BLINK"] = false
+        // console.info(x, y, str)
+        const col = (x - 1) * XPTO_CHAR_PADDING_X
+        const line = (y - 1) * XPTO_CHAR_PADDING_Y
+
+        for (let i = 0; i < str.length; i++) {
+            // console.info(str.length)
+            // console.info((x + i), y, str)
+            // width -> x
+            // height -> y
+            drawChar((col + (i * XPTO_CHAR_PADDING_X)), line, str.charAt(i))
+        }
+        TERMINAL["CURSOR_BLINK"] = true
+    }
+    // const wrappers = {
+    //     "DRAW": drawChar
+    // }
+    const buffer = TERMINAL["STDIN_BUFFER"]
+    console.log(`Execute(${buffer})`)
+    const command = buffer
+        .replace(/PRINT/g, "print")
+        .replace(/REBOOT/g, "bootXptoOS")
+        .replace(/DRAW/g, "drawPixelFg")
+        .replace(/FETCH/g, "fetch")
+        .replace(/\[/g, "(")
+        .replace(/\]/g, ")")
+    // 1. Replace wrapper function
+    // 2. Replace '[' to '('
+    // 3. Replace ']' to ')'
+    console.log(`eval(${command})`)
+    const result = eval(command)
+    console.info(result)
 }
 
 const appendStdinBuffer = (char) => {
@@ -724,9 +743,9 @@ const inputTerminal = (charCode) => {
         }
     } else if (charCode === 13) {
         // Enter
-        executeStdinBuffer()
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], " ")
         TERMINAL["CURSOR_Y"] = TERMINAL["CURSOR_Y"] + XPTO_CHAR_PADDING_Y
+        executeStdinBuffer()
         drawPrompt()
 
     } else if (charCode == 20) {
@@ -739,48 +758,56 @@ const inputTerminal = (charCode) => {
         startTerminal()
     } else if (charCode === 32) {
         // Spacebar
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer(" ")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], " ")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
     } else if (charCode === 173) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer("-")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "-")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
     } else if (charCode === 187) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer("=")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "=")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
     } else if (charCode === 188) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer(",")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], ",")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
     } else if (charCode === 189) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer("-")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "-")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
+
     } else if (charCode === 190) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer(".")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], ".")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
+
     } else if (charCode === 191) {
-        appendStdinBuffer(String.fromCharCode(charCode))
+        appendStdinBuffer(";")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], ";")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
-    } else if (charCode === 192) {
-        appendStdinBuffer(String.fromCharCode(charCode))
-        drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "'")
-        TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
+
     } else if (charCode > 47 && charCode < 91) {
         // Alphanumeric characters: 0-9 A-Z
         const charStr = String.fromCharCode(charCode)
         appendStdinBuffer(charStr)
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], charStr)
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
-    } else if (charCode === 220) {
+
+    } else if (charCode === 219) {
+        appendStdinBuffer("[")
+        drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "[")
+        TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
+
+    } else if (charCode === 221) {
+        appendStdinBuffer("]")
         drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "]")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
-    } else if (charCode === 221) {
-        drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "[")
+
+    } else if (charCode === 222) {
+        appendStdinBuffer("'")
+        drawChar(TERMINAL["CURSOR_X"], TERMINAL["CURSOR_Y"], "'")
         TERMINAL["CURSOR_X"] = TERMINAL["CURSOR_X"] + XPTO_CHAR_PADDING_X
     } else {
         console.info(charCode)
@@ -852,7 +879,7 @@ document.querySelector('button#zoom-in').addEventListener('click', () => {
 document.querySelector('button#zoom-out').addEventListener('click', () => {
     document.getElementById('canvas').style = ""
 })
-// document.getElementById('canvas').style="width: 640px; height:522px;"
+document.getElementById('canvas').style = "width: 640px; height:576px;"
 
 bootXptoMachine()
 
