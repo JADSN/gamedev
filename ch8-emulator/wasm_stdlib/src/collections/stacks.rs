@@ -34,7 +34,7 @@ impl Stack {
         self.capacity
     }
 
-    pub fn push(mut self, byte: u8) -> Result<usize, ErrorKind> {
+    pub fn push(&mut self, byte: u8) -> Result<usize, ErrorKind> {
         if self.length < self.capacity {
             self.memory[self.length] = byte;
             self.length += 1;
@@ -44,7 +44,7 @@ impl Stack {
         }
     }
 
-    pub fn pop(mut self) -> Option<u8> {
+    pub fn pop(&mut self) -> Option<u8> {
         if !self.is_empty() {
             let last_idx = self.length - 1;
             let last_data = self.memory[last_idx];
@@ -57,6 +57,24 @@ impl Stack {
     }
 
     pub fn drop(self) {
-        let _ = self.memory;
+        let _ = self;
+    }
+}
+
+mod tests {
+
+    #[test]
+    fn valids() {
+        use super::Stack;
+        let mut stack = Stack::new();
+        assert_eq!(stack.len(), 0);
+        for i in 1..=10 {
+            let _ = stack.push(i);
+        }
+        assert_eq!(stack.len(), 10);
+        for i in (1..=10).rev() {
+            assert_eq!(i, stack.pop().unwrap());
+        }
+        assert!(stack.is_empty());
     }
 }
