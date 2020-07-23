@@ -20,7 +20,7 @@ check:
 	cargo check --target $(TARGET) --release
 
 test:
-	cargo test --target $(TARGET) --release
+	cargo test --release --package wasm_stdlib
 
 run:
 	ls -lh ./dist

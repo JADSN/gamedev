@@ -289,7 +289,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn valid() {
+    fn valids() {
         assert!(*b"         1" == convert_u32_to_str(1));
         assert!(*b"        42" == convert_u32_to_str(42));
         assert!(*b"       537" == convert_u32_to_str(537));
