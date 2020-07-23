@@ -1,6 +1,6 @@
 use crate::errors::ErrorKind;
 
-const PAGE_SIZE: usize = 4096; // 4 Kbytes
+use crate::mem::PAGE_SIZE;
 
 pub struct Stack {
     memory: [u8; PAGE_SIZE],

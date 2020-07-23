@@ -1,13 +1,13 @@
 #![no_std]
-
 #![warn(clippy::all)]
 
 mod panic;
 
-// use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
-use core::sync::atomic::{AtomicU32, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, AtomicUsize, Ordering};
+// use core::sync::atomic::{AtomicU32, AtomicUsize, AtomicU8, Ordering};
 
-use wasm_stdlib::converters::convert_u32_to_str;
+use wasm_stdlib::{collections::vectors::Vector, converters::convert_u32_to_str, mem::PAGE_SIZE};
+// use wasm_stdlib::{converters::convert_u32_to_str, mem::PAGE_SIZE};
 
 // Monotonic Clock
 static MONOTONIC_CLOCK: AtomicU32 = AtomicU32::new(1);
@@ -17,56 +17,73 @@ static KEYBOARD_BUFFER: AtomicU8 = AtomicU8::new(0);
 
 // Console Buffer
 #[no_mangle]
-static mut CONSOLE_BUFFER: [u8; 255] = [0; 255];
-
-// TODO
-// static CONSOLE_BUFFER_POINTER: AtomicU8 = AtomicU8::new(0);
-
-// TODO
-// static CONSOLE_BUFFER_BUSY: AtomicBool = AtomicBool::new(false);
+static mut CONSOLE_BUFFER: [u8; PAGE_SIZE] = [0; PAGE_SIZE];
 
 #[no_mangle]
-pub unsafe extern "C" fn console_log(code: u8) {
-    let mut message: [u8; 255] = [32; 255];
+static CONSOLE_BUFFER_POINTER: AtomicUsize = AtomicUsize::new(0);
+
+#[no_mangle]
+static CONSOLE_BUFFER_BUSY: AtomicBool = AtomicBool::new(false);
+
+#[no_mangle]
+pub unsafe extern "C" fn console_log(msg_input: &Vector) {
+    // let mut message: [u8; 255] = [32; 255];
+
+    let mut message = Vector::new();
 
     // ? Input
     let cycles = MONOTONIC_CLOCK.load(Ordering::Relaxed);
-    // let msg1 = b"Primeira Mensagem\n";
-    let msg1 = convert_u32_to_str(cycles);
-    let msg2 = b": Invalid Key!";
 
-    // ! Processing: Concat 2 array characters into a 3rd array
-    let mut msg1_pos = 0;
-    let mut msg2_pos = 0;
+    let cycles_str = convert_u32_to_str(cycles);
 
-    for ptr in message.iter_mut() {
-        if msg1_pos < msg1.len() {
-            *ptr = msg1[msg1_pos];
-            msg1_pos += 1;
-        } else if msg2_pos < msg2.len() {
-            *ptr = msg2[msg2_pos];
-            msg2_pos += 1;
-        } else {
-            *ptr = 32;
+    for i in 0..cycles_str.len() {
+        let byte = cycles_str[i];
+        if byte != 32 {
+            let _ = message.push(byte);
         }
+    }
+
+    let separator = b": ";
+
+    for i in 0..separator.len() {
+        let byte = separator[i];
+        let _ = message.push(byte);
+    }
+
+    for i in 0..msg_input.len() {
+        if let Ok(byte) = msg_input.get(i) {
+            let _ = message.push(byte);
+        }
+    }
+
+    let line_feed = b"\n";
+
+    for i in 0..line_feed.len() {
+        let byte = line_feed[i];
+        let _ = message.push(byte);
     }
 
     // * Output
-    let mut x = 0;
-    for ptr in CONSOLE_BUFFER.iter_mut() {
-        match message.get(x) {
-            Some(c) => *ptr = *c,
-            None => *ptr = 0,
+    while CONSOLE_BUFFER_BUSY.load(Ordering::Relaxed) {}
+
+    CONSOLE_BUFFER_BUSY.store(true, Ordering::Relaxed);
+
+    let mut buffer_idx = CONSOLE_BUFFER_POINTER.load(Ordering::Relaxed);
+
+    for i in 0..message.len() {
+        if let Ok(byte) = message.get(i) {
+            CONSOLE_BUFFER[buffer_idx] = byte;
         }
-        x += 1;
+        buffer_idx += 1;
     }
+    CONSOLE_BUFFER_POINTER.store(buffer_idx, Ordering::Relaxed);
+    CONSOLE_BUFFER_BUSY.store(false, Ordering::Relaxed);
 }
 
 // #[no_mangle]
 // pub unsafe extern "C" fn get_log() -> u8 {
 //     42
 // }
-
 
 #[no_mangle]
 pub extern "C" fn cpuMainLoop() -> u8 {
@@ -88,9 +105,11 @@ pub extern "C" fn keyboard_send_key(key_code: u8) {
         56 => KEYBOARD_BUFFER.store(8, Ordering::Relaxed),
         57 => KEYBOARD_BUFFER.store(9, Ordering::Relaxed),
         _ => {
+            let message = Vector::from("Invalid Key!");
             unsafe {
-                console_log(0);
+                console_log(&message);
             }
+
             KEYBOARD_BUFFER.store(0, Ordering::Relaxed)
         }
     }

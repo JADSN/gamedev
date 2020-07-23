@@ -1,7 +1,7 @@
 // use crate::{collections::stacks::Stack, errors::ErrorKind};
 use crate::errors::ErrorKind;
 
-const PAGE_SIZE: usize = 4096; // 4 Kbytes
+use crate::mem::PAGE_SIZE;
 
 // TODO: Derive from Stack
 
@@ -25,6 +25,19 @@ impl Vector {
             capacity: PAGE_SIZE,
         }
     }
+
+    pub fn from(msg: &str) -> Self {
+        let mut vec = Self {
+            memory: [0; PAGE_SIZE],
+            length: 0,
+            capacity: PAGE_SIZE,
+        };
+        for byte in msg.as_bytes() {
+           let _ = vec.push(*byte);
+        }
+        vec
+    }
+
     pub fn len(&self) -> usize {
         self.length
     }

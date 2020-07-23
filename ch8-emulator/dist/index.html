@@ -11,10 +11,12 @@
 
 <body>
   <script>
+    const DEBUG = false
+    const debug = message => ((typeof (DEBUG) !== 'undefined') && (DEBUG === true)) ? (typeof (message) !== 'undefined') ? console.log(message) : false : false
     var memory = new WebAssembly.Memory({ initial: 1, maximum: 10 });
     window.Module = {}
     // const logArrayElements(element, index, array) {
-    //   console.log('a[' + index + '] = ' + element);
+    //   debug('a[' + index + '] = ' + element);
     // }
     ///
     const wasm_console = () => {
@@ -22,10 +24,10 @@
       const data = new Uint8ClampedArray(
         Module.memory.buffer,
         buffer_address,
-        255,
+        4096,
       )
       let acquiredData = ""
-      for (let i = 0; i < 256; i++) {
+      for (let i = 0; i < 4096; i++) {
         if (typeof (data[i]) !== "undefined" && data[i] !== 0) {
           acquiredData += String.fromCharCode(data[i] / 1)
         }
@@ -53,19 +55,20 @@
         // Module.get_log = results.instance.exports.get_log
         Module.memory = results.instance.exports.memory;
         Module.CONSOLE_BUFFER = results.instance.exports.CONSOLE_BUFFER;
+        Module.debug_exports = results.instance.exports;
         // CPU Clock Generator
         setInterval(() => {
           // const now = new Date().getSeconds()
-          // console.log(wasmInstatiate.cpuMainLoop(now))
+          // debug(wasmInstatiate.cpuMainLoop(now))
           const keyCodeFromAtomic = Module.cpuMainLoop()
-          console.log(`Output: ${keyCodeFromAtomic}`)
+          debug(`Output: ${keyCodeFromAtomic}`)
         }, 1000)
       })
 
     document.onkeydown = (evt) => {
       evt = evt || window.event
       let keyPressed = evt.keyCode || evt.which
-      console.log(`Input: ${String.fromCharCode(keyPressed)}`)
+      debug(`Input: ${String.fromCharCode(keyPressed)}`)
       Module.keyboard_send_key(keyPressed)
 
     }
