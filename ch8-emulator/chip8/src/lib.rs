@@ -12,6 +12,12 @@ use wasm_stdlib::{collections::vectors::Vector, converters::convert_u32_to_str, 
 // Monotonic Clock
 static MONOTONIC_CLOCK: AtomicU32 = AtomicU32::new(1);
 
+#[no_mangle]
+static SLEEP_DONE: AtomicBool = AtomicBool::new(false);
+
+// Realtime Clock
+static REALTIME_CLOCK: AtomicU32 = AtomicU32::new(0);
+
 // Keyboard Buffer
 static KEYBOARD_BUFFER: AtomicU8 = AtomicU8::new(0);
 
@@ -64,6 +70,8 @@ pub unsafe extern "C" fn console_log(msg_input: &Vector) {
     }
 
     // * Output
+    // TODO: sleep
+
     while CONSOLE_BUFFER_BUSY.load(Ordering::Relaxed) {}
 
     CONSOLE_BUFFER_BUSY.store(true, Ordering::Relaxed);
@@ -86,9 +94,24 @@ pub unsafe extern "C" fn console_log(msg_input: &Vector) {
 // }
 
 #[no_mangle]
-pub extern "C" fn cpuMainLoop() -> u8 {
+pub extern "C" fn cpuMainLoop(realtime_clock: u32) -> u32 {
+    SLEEP_DONE.store(true, Ordering::Relaxed);
+    REALTIME_CLOCK.store(realtime_clock, Ordering::Relaxed);
+    let current_clocktime = REALTIME_CLOCK.load(Ordering::Relaxed);
+    let delay_converted = convert_u32_to_str(current_clocktime);
+    let mut message = Vector::new();
+    for i in 0..delay_converted.len() {
+        let byte = delay_converted[i];
+        if byte != 32 {
+            let _ = message.push(byte);
+        }
+    }
+    unsafe {
+        console_log(&message);
+    }
     let current_cycle = MONOTONIC_CLOCK.fetch_add(1, Ordering::Relaxed);
-    KEYBOARD_BUFFER.load(Ordering::Relaxed)
+    // KEYBOARD_BUFFER.load(Ordering::Relaxed)
+    current_clocktime
 }
 
 #[no_mangle]

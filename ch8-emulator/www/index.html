@@ -58,9 +58,8 @@
         Module.debug_exports = results.instance.exports;
         // CPU Clock Generator
         setInterval(() => {
-          // const now = new Date().getSeconds()
-          // debug(wasmInstatiate.cpuMainLoop(now))
-          const keyCodeFromAtomic = Module.cpuMainLoop()
+          const now = Math.floor(Date.now() / 1000)
+          const keyCodeFromAtomic = Module.cpuMainLoop(now)
           debug(`Output: ${keyCodeFromAtomic}`)
         }, 1000)
       })
