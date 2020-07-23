@@ -3,7 +3,6 @@ use crate::errors::ErrorKind;
 
 const PAGE_SIZE: usize = 4096; // 4 Kbytes
 
-
 // TODO: Derive from Stack
 
 pub struct Vector {
@@ -11,7 +10,6 @@ pub struct Vector {
     length: usize,
     capacity: usize,
 }
-
 
 impl Default for Vector {
     fn default() -> Self {
@@ -27,22 +25,21 @@ impl Vector {
             capacity: PAGE_SIZE,
         }
     }
-
     pub fn len(&self) -> usize {
         self.length
-    }
-
-    pub fn cap(&self) -> usize {
-        self.capacity
     }
 
     pub fn is_empty(&self) -> bool {
         self.length == 0
     }
 
-    pub fn push(mut self, byte: u8) -> Result<usize, ErrorKind> {
-        if self.len() < self.cap() {
-            self.memory[self.len()] = byte;
+    pub fn capacity(&self) -> usize {
+        self.capacity
+    }
+
+    pub fn push(&mut self, byte: u8) -> Result<usize, ErrorKind> {
+        if self.length < self.capacity {
+            self.memory[self.length] = byte;
             self.length += 1;
             Ok(self.len())
         } else {
@@ -52,14 +49,18 @@ impl Vector {
 
     pub fn pop(&mut self) -> Option<u8> {
         if !self.is_empty() {
-            let last_idx = self.len() - 1;
-            let byte = self.memory[last_idx];
+            let last_idx = self.length - 1;
+            let last_data = self.memory[last_idx];
             self.memory[last_idx] = 0;
             self.length -= 1;
-            Some(byte)
+            Some(last_data)
         } else {
             None
         }
+    }
+
+    pub fn drop(self) {
+        let _ = self;
     }
 
     pub fn get(&self, idx: usize) -> Result<u8, ErrorKind> {
@@ -101,8 +102,62 @@ impl Vector {
     //         Err(ErrorKind::Overflow)
     //     }
     // }
+}
 
-    // pub fn drop(self) {
-    //     let _ = self.memory;
-    // }
+mod tests {
+    #[test]
+    fn valids_as_stack() {
+        use super::Vector;
+        let mut vector = Vector::new();
+        assert_eq!(vector.len(), 0);
+        for i in 1..=10 {
+            let _ = vector.push(i);
+        }
+        assert_eq!(vector.len(), 10);
+        for i in (1..=10).rev() {
+            assert_eq!(i, vector.pop().unwrap());
+        }
+        assert!(vector.is_empty());
+    }
+
+    #[test]
+    fn valids_as_vector_get() {
+        use super::Vector;
+        let mut vector = Vector::new();
+        assert_eq!(vector.len(), 0);
+        for i in 1..=10 {
+            let _ = vector.push(i);
+        }
+        if let Ok(one) = vector.get(0) {
+            assert_eq!(1, one);
+        }
+        if let Ok(five) = vector.get(4) {
+            assert_eq!(5, five);
+        }
+        if let Ok(ten) = vector.get(9) {
+            assert_eq!(10, ten);
+        }
+    }
+
+    #[test]
+    fn valids_as_vector_delete() {
+        use super::Vector;
+        let mut vector = Vector::new();
+        assert_eq!(vector.len(), 0);
+        for i in 1..=10 {
+            let _ = vector.push(i);
+        }
+
+        if vector.delete(4).is_ok() {
+            assert_eq!(9, vector.len()); // size == 9
+        };
+
+        if vector.delete(4).is_ok() {
+            assert_eq!(8, vector.len()); // size == 8
+        };
+
+        if let Ok(eight) = vector.get(5) {
+            assert_eq!(8, eight);
+        }
+    }
 }
